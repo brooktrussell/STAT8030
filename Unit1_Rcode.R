@@ -62,3 +62,16 @@ for (i in 1:nsim){
 hist(sim.mean.diff);abline(v=obs.mean.diff,col="red",lty=2)
 length(sim.mean.diff[sim.mean.diff<=obs.mean.diff])/nsim #estimated p-value
 
+
+#10 remote controlled cars were each run with battery brand A and B
+#and the time each car ran was recorded (in hours)
+#Is there a difference in average length of time different for the brands?
+battery_A <- c(4.1, 4.6, 3.2, 4.9, 4.1, 4.0, 3.7, 4.3, 3.9, 4.0)
+battery_B <- c(3.6, 4.6, 3.5, 3.0, 4.4, 4.1, 3.6, 3.2, 4.3, 3.0)
+
+diffs <- battery_A - battery_B
+cbind(battery_A,battery_B,diffs)
+
+t.test(diffs)
+
+t.test(battery_A,battery_B,paired=TRUE)
