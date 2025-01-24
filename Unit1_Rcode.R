@@ -78,3 +78,12 @@ t.test(battery_A,battery_B,paired=TRUE)
 
 #Song length data
 song_lengths <- c(448,242,231,246,246,293,280,227,244,213,262,239,213,258,255,257)
+var(song_lengths)
+sd(song_lengths)
+chisqstar <- 15*var(song_lengths)/3600
+chisqstar
+qchisq(.05,15)
+pchisq(chisqstar,15)
+qqnorm(song_lengths);qqline(song_lengths)
+library(car)
+qqPlot(song_lengths)
