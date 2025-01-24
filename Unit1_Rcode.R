@@ -75,3 +75,6 @@ cbind(battery_A,battery_B,diffs)
 t.test(diffs)
 
 t.test(battery_A,battery_B,paired=TRUE)
+
+#Song length data
+song_lengths <- c(448,242,231,246,246,293,280,227,244,213,262,239,213,258,255,257)
