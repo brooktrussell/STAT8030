@@ -27,6 +27,14 @@ out <- mvrnorm(100,mu=c(0,0,0,0,0),Sigma=sig_mat_new)
 out
 cor(out)
 
+#
+plot(co2,temp,xlab="CO2",ylab="Temperature",main="CO2 vs Temperature",pch=16,col="green")
+m_slr <- lm(temp ~ co2)
+abline(m_slr)
+anova(m_slr)
+10.483 + .011*360
+
+
 
 
 #data for HW 3
