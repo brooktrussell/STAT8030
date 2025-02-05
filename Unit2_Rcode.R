@@ -34,6 +34,15 @@ abline(m_slr)
 anova(m_slr)
 10.483 + .011*360
 
+#
+MSE <- .0128
+Sxx <- sum((co2 - mean(co2))^2)
+stderr <- sqrt(MSE/Sxx)
+tstar <- (.0109 - 0)/stderr
+1 - pt(tstar,10-2)
+summary(m_slr)
+
+
 
 
 
