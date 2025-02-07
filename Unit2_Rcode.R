@@ -42,6 +42,17 @@ tstar <- (.0109 - 0)/stderr
 1 - pt(tstar,10-2)
 summary(m_slr)
 
+predict(m_slr,newdata=data.frame("co2"=c(330,350)))
+0.010918 - qt(.975,8)*sqrt(MSE/Sxx)
+0.010918 + qt(.975,8)*sqrt(MSE/Sxx)
+confint(m_slr)
+tstar <- (10.483081 - 8)/0.661635
+tstar
+1 - pt(tstar,8)
+10.483081 - qt(.975,8)*  0.661635
+10.483081 + qt(.975,8)*  0.661635
+confint(m_slr)
+
 
 
 
