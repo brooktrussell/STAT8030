@@ -53,7 +53,20 @@ tstar
 10.483081 + qt(.975,8)*  0.661635
 confint(m_slr)
 
-
+qt(.975,8)
+#2.306004
+MSE <- .0128
+Sxx <- sum((co2 - mean(co2))^2)
+n<-10
+xbar <- mean(co2)
+SE1 <- sqrt(MSE * (1/n + (350 - xbar)^2/Sxx))
+SE2 <- sqrt(MSE * (1 + 1/n + (350 - xbar)^2/Sxx))
+14.3 - 2.306 * SE1
+14.3 + 2.306 * SE1
+14.3 - 2.306 * SE2
+14.3 + 2.306 * SE2
+predict(m_slr,newdata=data.frame("co2"=c(350)),interval = c("prediction"))
+predict(m_slr,newdata=data.frame("co2"=c(350)),interval = c("confidence"))
 
 
 
