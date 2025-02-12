@@ -69,6 +69,64 @@ predict(m_slr,newdata=data.frame("co2"=c(350)),interval = c("prediction"))
 predict(m_slr,newdata=data.frame("co2"=c(350)),interval = c("confidence"))
 
 
+# -----------------------
+# simulated SLR example
+# -----------------------
+set.seed(10) #set the random seed so that everyone gets identical results
+x <- runif(50,0,10) #randomly select some x values
+y <- 30 + 2*x + rnorm(50,0,17.5) #randomly generate some y values
+plot(x,y,pch=17,col="blue",main="Scatterplot of x versus y") #create the scatterplot
+cor.test(x,y) #test whether rho != 0
+m1 <- lm(y~x) #fit SLR model
+abline(m1,col="red",lty=2) #add SLR line to scatterplot
+#legend(.15,83,legend="Least Squares Line",col="red",lty=2)
+abline(30,2)
+legend(.15,83,legend=c("Least Squares Line","True Line"),
+	col=c("red","black"),lty=2:1)
+summary(m1) #get summary of SLR model
+anova(m1)
+
+#inference E(Y_h) for X_h =6
+Xh <- 6
+Yhhat <- m1$coef[1] + m1$coef[2]*Xh
+Yhhat
+anova(m1)
+MSE <- 250.58# from anova table
+Sxx <- sum((x - mean(x))^2)
+SYhhat <- sqrt(MSE*(1/50 + (Xh - mean(x))^2/Sxx))
+#95% ci for Yhhat
+Yhhat - qt(.975,50-2)*SYhhat
+Yhhat + qt(.975,50-2)*SYhhat
+
+
+#predict new response for X_h =6
+Xh <- 6
+Yhnew <- m1$coef[1] + m1$coef[2]*Xh
+Yhnew
+MSE <- 250.58# from anova table
+Sxx <- sum((x - mean(x))^2)
+SYhnew <- sqrt(MSE*(1 + 1/50 + (Xh - mean(x))^2/Sxx))
+#95% ci for Yhhat
+Yhnew - qt(.975,50-2)*SYhnew
+Yhnew + qt(.975,50-2)*SYhnew
+
+
+#confidence bands for regression line
+xseq <- seq(0,10,by=.1)
+yhat <- m1$coef[1] + m1$coef[2]*xseq
+SYhhat <- sqrt(MSE*(1/50 + (xseq - mean(x))^2/Sxx))
+W <- sqrt(2*qf(.95,2,50-2))
+lwr.band <- yhat - W*SYhhat
+upr.band <- yhat + W*SYhhat
+plot(x,y,pch=17,col="blue",main="Scatterplot of x versus y") #create the scatterplot
+abline(m1,col="red",lty=1) #add SLR line to scatterplot
+lines(xseq,lwr.band,col="purple",lty=3)
+lines(xseq,upr.band,col="purple",lty=3)
+legend(.15,83,legend=c("Least Squares Line","95% Conf. Bands"),col=c("red","purple"),lty=c(1,3))
+
+
+
+
 
 #data for HW 3
 Soil_pH <- c(3.3,3.4,3.4,3.5,3.6,3.6,3.7,3.7,3.8,3.8,3.9,4.0,4.1,4.2,4.3,4.4,4.5,5.0,5.1,5.2)
