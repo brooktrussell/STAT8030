@@ -68,6 +68,21 @@ SE2 <- sqrt(MSE * (1 + 1/n + (350 - xbar)^2/Sxx))
 predict(m_slr,newdata=data.frame("co2"=c(350)),interval = c("prediction"))
 predict(m_slr,newdata=data.frame("co2"=c(350)),interval = c("confidence"))
 
+plot(co2,temp)
+m_slr <- lm(temp ~ co2)
+abline(m_slr)
+MSE <- .0128
+Sxx <- sum((co2 - mean(co2))^2)
+n <- 10
+x_seq <- seq(310,370,length=100)
+SE_confBand <- sqrt(MSE * (1/n + (x_seq - mean(co2))^2/Sxx))
+W <- sqrt(2 * qf(.95,2,8))
+uppr_band <- (10.48308 + x_seq*0.01092) + W * SE_confBand
+lwr_band <- (10.48308 + x_seq*0.01092) - W * SE_confBand
+lines(x_seq,uppr_band,lty=2)
+lines(x_seq,lwr_band,lty=2)
+
+
 
 # -----------------------
 # simulated SLR example
