@@ -82,7 +82,10 @@ lwr_band <- (10.48308 + x_seq*0.01092) - W * SE_confBand
 lines(x_seq,uppr_band,lty=2)
 lines(x_seq,lwr_band,lty=2)
 
-
+plot(co2,m_slr$residuals)
+abline(h=0)
+library(car)
+qqPlot(m_slr$residuals)
 
 # -----------------------
 # simulated SLR example
