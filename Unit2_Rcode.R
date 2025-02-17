@@ -142,6 +142,83 @@ lines(xseq,lwr.band,col="purple",lty=3)
 lines(xseq,upr.band,col="purple",lty=3)
 legend(.15,83,legend=c("Least Squares Line","95% Conf. Bands"),col=c("red","purple"),lty=c(1,3))
 
+#diagnostic plots
+# 1) use above data
+par(mfrow=c(2,2));plot(x,y,main="Scatterplot of X vs Y");abline(m1);plot(x,m1$resid,main="X vs Raw Residuals");abline(0,0);qqnorm(m1$resid);qqline(m1$resid);acf(m1$resid,main="ACF Plot of Residuals")
+stndres <- rstandard(m1)
+#install.packages("car")
+library(car)
+par(mfrow=c(2,2));plot(x,y,main="Scatterplot of X vs Y");abline(m1);plot(x,stndres,main="X vs Standardized Residuals");abline(0,0);qqPlot(stndres);acf(m1$resid,main="ACF Plot of Residuals")
+abs(dffits(m1))
+abs(dfbetas(m1))
+cooks.distance(m1);max(cooks.distance(m1));qf(.5,1,49)
+hatvalues(m1)#leverage values
+influence.measures(m1)
+
+# 2) use a different data set (autocorrelation)
+rho <- 0.5;sig <- 17.5;sig.mat <- diag(50)
+sig.mat <- sig * rho^abs(row(sig.mat)-col(sig.mat))
+library(mvtnorm)
+set.seed(10) #set the random seed so that everyone gets identical results
+x <- runif(50,0,10) #randomly select some x values
+y2 <- 30 + 2*x + c(rmvnorm(1,sigma=sig.mat))
+plot(x,y2)
+m2 <- lm(y2~x)
+summary(m2)
+par(mfrow=c(2,2));plot(x,y2,main="Scatterplot of X vs Y");abline(m2);plot(x,m2$resid,main="X vs Raw Residuals");abline(0,0);qqPlot(m2$resid);acf(m2$resid,main="ACF Plot of Residuals")
+par(mfrow=c(2,2));plot(x,y2,main="Scatterplot of X vs Y");abline(m2);plot(1:50,m2$resid,main="Time vs Raw Residuals");abline(0,0);qqPlot(m2$resid);acf(m2$resid,main="ACF Plot of Residuals")
+influence.measures(m2)
+
+# 3) use another data set (heteroscedacity)
+set.seed(11) #set the random seed so that everyone gets identical results
+x <- runif(50,0,10) #randomly select some x values
+y3 <- 30 + 2*x + c(rmvnorm(1,sigma=diag(3*x^2)))
+plot(x,y3)
+m3 <- lm(y3~x)
+summary(m3)
+par(mfrow=c(2,2));plot(x,y3,main="Scatterplot of X vs Y");abline(m3);plot(x,m3$resid,main="X vs Raw Residuals");abline(0,0);qqPlot(m3$resid);acf(m3$resid,main="ACF Plot of Residuals")
+influence.measures(m3)
+
+# 4) use another data set (curvature)
+set.seed(10) #set the random seed so that everyone gets identical results
+x <- runif(50,0,10) #randomly select some x values
+y4 <- 30 + 2*x + 4*x^2 + rnorm(50,0,17.5)
+plot(x,y4)
+m4 <- lm(y4~x)
+summary(m4)
+par(mfrow=c(2,2));plot(x,y4,main="Scatterplot of X vs Y");abline(m4);plot(x,m4$resid,main="X vs Raw Residuals");abline(0,0);qqPlot(m4$resid);acf(m4$resid,main="ACF Plot of Residuals")
+influence.measures(m4)
+
+
+# 5) one more data set (outliers)
+set.seed(10) #set the random seed so that everyone gets identical results
+x <- runif(50,0,10) #randomly select some x values
+y5 <- 30 + 2*x + rnorm(50,0,5) #randomly generate some y values
+m5 <- lm(y5~x) #fit SLR model
+stndres <- rstandard(m5)
+summary(m5) #get summary of SLR model
+par(mfrow=c(2,2));plot(x,y5,main="Scatterplot of X vs Y");abline(m5);plot(x,stndres,main="X vs Standardized Residuals");abline(0,0);qqPlot(stndres);acf(m5$resid,main="ACF Plot of Residuals")
+influence.measures(m5)
+#add outlier at 20,70
+newy <- c(y5,70);newx <- c(x,20)
+m6 <- lm(newy ~ newx)
+stndres <- rstandard(m6)
+par(mfrow=c(2,2));plot(newx,newy,main="Scatterplot of X vs Y");abline(m6);abline(m5);plot(newx,stndres,main="X vs Standardized Residuals");abline(0,0);qqPlot(stndres);acf(m6$resid,main="ACF Plot of Residuals")
+influence.measures(m6)
+plot(newx,newy,type="n");text(newx,newy,1:51,cex=.6)
+#add outlier at 20,20
+newy <- c(y5,20);newx <- c(x,20)
+m6 <- lm(newy ~ newx)
+stndres <- rstandard(m6)
+par(mfrow=c(2,2));plot(newx,newy,main="Scatterplot of X vs Y");abline(m6);abline(m5);plot(newx,stndres,main="X vs Standardized Residuals");abline(0,0);qqPlot(stndres);acf(m6$resid,main="ACF Plot of Residuals")
+influence.measures(m6)
+#add outlier at 5,70
+newy <- c(y5,70);newx <- c(x,5)
+m6 <- lm(newy ~ newx)
+stndres <- rstandard(m6)
+par(mfrow=c(2,2));plot(newx,newy,main="Scatterplot of X vs Y");abline(m6);abline(m5);plot(newx,stndres,main="X vs Standardized Residuals");abline(0,0);qqPlot(stndres);acf(m6$resid,main="ACF Plot of Residuals")
+influence.measures(m6)
+
 
 
 
