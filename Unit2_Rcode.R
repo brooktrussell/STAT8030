@@ -220,6 +220,82 @@ par(mfrow=c(2,2));plot(newx,newy,main="Scatterplot of X vs Y");abline(m6);abline
 influence.measures(m6)
 
 
+#simulation example to introduce multiple regression
+set.seed(3)
+x1 <- runif(50,0,10)
+x2 <- runif(50,0,10)
+x3 <- runif(50,0,10)
+y <- 5 + 3*x1 - 5*x2 + 5*x3 + rnorm(50,0,1)
+x4 <- (x1 + x2)/2
+x5 <- runif(50,0,10)
+x6 <- runif(50,0,10)
+
+#fit the model with x1, x2, x3, and x4 'by hand'
+X <- cbind(rep(1,50),x1,x2,x3,x4)
+betaHat <- solve(t(X) %*% X) %*% t(X) %*% y
+#drop x4
+X <- cbind(rep(1,50),x1,x2,x3)
+betaHat <- solve(t(X) %*% X) %*% t(X) %*% y
+betaHat
+
+#what if the columns of X aren't *exactly* linearly dependent???
+set.seed(6)
+x4 <- (x1 + x2)/2 + rnorm(50,0,.025)
+X <- cbind(rep(1,50),x1,x2,x3,x4)
+betaHat <- solve(t(X) %*% X) %*% t(X) %*% y
+betaHat
+set.seed(11)
+x4 <- (x1 + x2)/2 + rnorm(50,0,.025)
+X <- cbind(rep(1,50),x1,x2,x3,x4)
+betaHat <- solve(t(X) %*% X) %*% t(X) %*% y
+betaHat
+set.seed(15)
+x4 <- (x1 + x2)/2 + rnorm(50,0,.025)
+X <- cbind(rep(1,50),x1,x2,x3,x4)
+betaHat <- solve(t(X) %*% X) %*% t(X) %*% y
+betaHat
+
+
+#the lm function will drop x4 if vars are perfectly linearly dependent
+x4 <- (x1 + x2)/2
+m1 <- lm(y ~ x1 + x2 + x3 + x4)
+#doesn't drop x4 here
+set.seed(15)
+x4 <- (x1 + x2)/2 + rnorm(50,0,.025)
+m1 <- lm(y ~ x1 + x2 + x3 + x4)
+#drop x4 manually, should be the same as the first lm fit
+x4 <- (x1 + x2)/2
+m1 <- lm(y ~ x1 + x2 + x3)
+
+#check assumptions for m1
+library(car)
+std.res <- rstandard(m1)
+par(mfrow=c(1,2));plot(m1$fitted.values,std.res);abline(0,0);qqPlot(m1$residuals)
+
+
+#what if we leave out x3
+m2 <- lm(y ~ x1 + x2)
+std.res <- rstandard(m2)
+par(mfrow=c(1,2));plot(m2$fitted.values,std.res);abline(0,0);qqPlot(m2$residuals)
+par(mfrow=c(1,2))
+ plot(x3,m2$residuals);abline(0,0)#the pattern here suggests that x3 is important!
+ plot(x5,m2$residuals);abline(0,0)#the lack of pattern here suggests that x5 is not important!
+
+ 
+#model comparison
+m3 <- lm(y ~ x1 + x2 + x3 + x5)#
+std.res <- rstandard(m3)
+par(mfrow=c(1,2));plot(m3$fitted.values,std.res);abline(0,0);qqPlot(m3$residuals)
+summary(m3)
+
+X <- cbind(rep(1,50),x1,x2,x3,x5)
+cov.mat.b <- .6 * solve(t(X) %*% X)
+sqrt(diag(cov.mat.b))
+
+
+anova(m3,m1)#F test for sub-model
+
+
 
 
 
