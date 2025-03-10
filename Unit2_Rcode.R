@@ -296,6 +296,141 @@ sqrt(diag(cov.mat.b))
 anova(m3,m1)#F test for sub-model
 
 
+#first, define the VIF function
+vif_func<-function(in_frame,thresh=10,trace=T,...){
+
+  #library(fmsb)
+
+  VIF <- function(X) { 1/(1-summary(X)$r.squared) }
+
+  percentile <- function(dat) { # convert numeric vector into percentiles
+   pt1 <- quantile(dat, probs=seq(0, 1, by=0.01), type=7) # set minimum 0 percentile.
+   pt2 <- unique(as.data.frame(pt1), fromLast=TRUE)
+   pt3 <- rownames(pt2)
+   pt4 <- as.integer(strsplit(pt3, "%"))
+   datp <- pt4[as.integer(cut(dat, c(0, pt2$pt1), labels=1:length(pt3)))]
+   return(datp)
+  }
+  
+  if(any(!'data.frame' %in% class(in_frame))) in_frame<-data.frame(in_frame)
+  
+  #get initial vif value for all comparisons of variables
+  vif_init<-NULL
+  var_names <- names(in_frame)
+  for(val in var_names){
+      regressors <- var_names[-which(var_names == val)]
+      form <- paste(regressors, collapse = '+')
+      form_in <- formula(paste(val, '~', form))
+      vif_init<-rbind(vif_init, c(val, VIF(lm(form_in, data = in_frame, ...))))
+      }
+  vif_max<-max(as.numeric(vif_init[,2]), na.rm = TRUE)
+
+  if(vif_max < thresh){
+    if(trace==T){ #print output of each iteration
+        prmatrix(vif_init,collab=c('var','vif'),rowlab=rep('',nrow(vif_init)),quote=F)
+        cat('\n')
+        cat(paste('All variables have VIF < ', thresh,', max VIF ',round(vif_max,2), sep=''),'\n\n')
+        }
+    return(var_names)
+    }
+  else{
+
+    in_dat<-in_frame
+
+    #backwards selection of explanatory variables, stops when all VIF values are below 'thresh'
+    while(vif_max >= thresh){
+      
+      vif_vals<-NULL
+      var_names <- names(in_dat)
+        
+      for(val in var_names){
+        regressors <- var_names[-which(var_names == val)]
+        form <- paste(regressors, collapse = '+')
+        form_in <- formula(paste(val, '~', form))
+        vif_add<-VIF(lm(form_in, data = in_dat, ...))
+        vif_vals<-rbind(vif_vals,c(val,vif_add))
+        }
+      max_row<-which(vif_vals[,2] == max(as.numeric(vif_vals[,2]), na.rm = TRUE))[1]
+
+      vif_max<-as.numeric(vif_vals[max_row,2])
+
+      if(vif_max<thresh) break
+      
+      if(trace==T){ #print output of each iteration
+        prmatrix(vif_vals,collab=c('var','vif'),rowlab=rep('',nrow(vif_vals)),quote=F)
+        cat('\n')
+        cat('removed: ',vif_vals[max_row,1],vif_max,'\n\n')
+        flush.console()
+        }
+
+      in_dat<-in_dat[,!names(in_dat) %in% vif_vals[max_row,1]]
+
+      }
+
+    return(names(in_dat))
+    
+    }
+  
+  }#end VIF function
+
+
+
+# --------------------
+# used car example
+# --------------------
+Price <- c(85,103,70,82,89,98,66,95,169,70,48)# response variable
+Age <- c(5,4,6,5,5,5,6,6,2,7,7)# one explanatory variable
+Miles <- c(57,40,77,60,49,47,58,39,8,69,89)# another explanatory variable
+car.df <- data.frame("Price"=Price,"Age"=Age,"Miles"=Miles)
+
+#first, look at correlation matrix
+cor(car.df)
+
+#next, look at scatterplot matrix
+pairs(car.df)
+
+#now, use the VIF function
+vif_func(car.df[,-1])#using used car vars
+
+
+
+# --------------------
+# height example
+# --------------------
+Age <- c(3,5,2,3,7,6)
+Inches <- c(16,24,15,14,28,30)
+cm <- c(40.64,60.96,38.10,35.56,71.12,76.20)
+# add a little noise
+set.seed(2);cm <- c(40.64,60.96,38.10,35.56,71.12,76.20) + rnorm(6,0,.15)
+
+ht.df <- data.frame("Age"=Age,"Inches"=Inches,"cm"=cm)
+
+#first, look at correlation matrix
+cor(ht.df)
+
+#next, look at scatterplot matrix
+pairs(ht.df)
+
+#now, use the VIF function
+vif_func(ht.df[,-1])#using height vars
+
+
+# --------------------
+# ames housing data set
+# --------------------
+#dat <- read.table("C:/Users/brookr/Desktop/AmesHousingComma.txt",header=TRUE,sep=",")
+#X <- read.table("C:/Users/brookr/Desktop/AmesHousingComma.txt",header=TRUE,sep=",")
+X <- read.table("AmesHousingComma.txt",header=TRUE,sep=",")
+ames.dat <- na.omit(X[,c(82,6,21,56,20,45,51,5)])
+pairs(ames.dat)
+cor(ames.dat)
+vif_func(ames.dat[,-1])
+
+
+
+
+
+
 
 
 
