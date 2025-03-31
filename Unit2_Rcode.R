@@ -427,6 +427,286 @@ cor(ames.dat)
 vif_func(ames.dat[,-1])
 
 
+#polynomial regression
+library(car)
+data(CanPop)
+attach(CanPop)
+plot(c(1850,2100),c(0,100),type="n")
+points(year,population)
+m1 <- lm(population ~ year) #linear model
+m2 <- lm(population ~ year + I(year^2)) #quadratic model
+m3 <- lm(population ~ year + I(year^2) + I(year^3)) #cubic model
+m4 <- lm(population ~ year + I(year^2) + I(year^3) + I(year^4) + I(year^5)
+			+ I(year^6) + I(year^7) + I(year^8)) #8th degree model
+abline(m1)
+xseq <- seq(1850,2100,by=.1) #a sequence of x values for which we want predictions
+lines(xseq,predict(m2,data.frame("year"=xseq)),col="red") #get predictions for m2
+lines(xseq,predict(m3,data.frame("year"=xseq)),col="blue") #get predictions for m3
+lines(xseq,predict(m4,data.frame("year"=xseq)),col="green") #get predictions for m3
+
+
+
+#potential MC issue
+plot(year,year^2)
+cor(year,year^2)
+vif(m2)
+
+#standardize year
+mean.x <- mean(year)
+sd.x <- sd(year)
+year.stdz <- (year - mean.x)/sd.x
+m1.stdz <- lm(population ~ year.stdz)
+m2.stdz <- lm(population ~ year.stdz + I(year.stdz^2))
+plot(year.stdz,population)
+abline(m1.stdz)
+xseq.stdz <- seq(-1.6,1.6,by=.05)
+lines(xseq.stdz,predict(m2.stdz,data.frame("year.stdz"=xseq.stdz))) #get predictions for m2.stdz
+#say that we want to predict population in 1985
+predict(m2.stdz,data.frame("year.stdz"=(1985 - mean.x)/sd.x)) #need to standardize x value before making prediction
+predict(m2,data.frame("year"=1985)) #should be the same as above
+
+#check for MC
+plot(year.stdz,year.stdz^2)
+cor(year.stdz,year.stdz^2)
+vif(m2.stdz)
+
+
+#comparing cubic vs quadratic using R^2, adjR^2, PRESS, AIC, and BIC
+summary(m2)#R-squared:  0.9964,    Adjusted R-squared:  0.9959
+#PRESS statistic
+pr <- resid(m2)/(1 - lm.influence(m2)$hat);sum(pr^2)#6.574237
+extractAIC(m2)#AIC = -14.84459
+extractAIC(m2,k=log(length(year)))#BIC = -12.52683
+
+summary(m3)#R-squared:  0.9965,    Adjusted R-squared:  0.9957
+#PRESS statistic
+pr <- resid(m3)/(1 - lm.influence(m3)$hat);sum(pr^2)#8.775978
+extractAIC(m3)#AIC = -13.3222
+extractAIC(m3,k=log(length(year)))#BIC = -2.901522
+
+                                                                    23
+detach(CanPop)
+
+
+
+
+
+
+#example of model selection using simulated data
+set.seed(11);pred.vars <- matrix(rnorm(100*10),nrow=100,ncol=10)
+beta.vec <- c(.5,1.2,-1.1,.75,-.3)
+set.seed(9);resp.var <- cbind(rep(1,100),pred.vars[,1:4]) %*% beta.vec + rnorm(100,0,.3)
+
+round(cor(cbind(resp.var,pred.vars)),2)
+pairs(cbind(resp.var,pred.vars))
+#vif_func(data.frame(pred.vars))
+
+#FIRST MODEL
+m1 <- lm(resp.var ~ pred.vars[,1] + pred.vars[,2] + pred.vars[,7] + pred.vars[,8])
+summary(m1)#R-squared:  0.7583,    Adjusted R-squared:  0.7481
+#PRESS statistic
+pr <- resid(m1)/(1 - lm.influence(m1)$hat);sum(pr^2)#76.20835
+extractAIC(m1)#AIC = -29.33751
+extractAIC(m1,k=log(length(resp.var)))#BIC = -16.31166
+
+library(car)
+stndres <- rstandard(m1)
+par(mfrow=c(1,3));plot(m1$fit,stndres,main="Fitted vs Standardized Residuals");abline(0,0);qqPlot(stndres);acf(m1$resid,main="ACF Plot of Residuals")
+
+#some residual plots for m1
+plot(pred.vars[,5],m1$resid,);abline(0,0,lty=2)
+plot(pred.vars[,3],m1$resid,);abline(0,0,lty=2)#indicates that x3 should be added to the model
+
+
+#SECOND MODEL
+m2 <- lm(resp.var ~ pred.vars[,1] + pred.vars[,2] + pred.vars[,3])
+summary(m2)#R-squared: 0.9374, Adjusted R-squared:  0.9355
+#PRESS statistic
+pr <- resid(m2)/(1 - lm.influence(m2)$hat);sum(pr^2)#18.8558
+extractAIC(m2)#AIC = -166.4796
+extractAIC(m2,k=log(length(resp.var)))#BIC = -156.0589
+
+stndres <- rstandard(m2)
+par(mfrow=c(1,3));plot(m2$fit,stndres,main="Fitted vs Standardized Residuals");abline(0,0);qqPlot(stndres);acf(m2$resid,main="ACF Plot of Residuals")
+
+
+#some residual plots for m2
+plot(pred.vars[,6],m2$resid);abline(0,0,lty=2)
+plot(pred.vars[,4],m2$resid);abline(0,0,lty=2)#indicates that x4 should be added to the model
+
+
+
+#cross validation
+set.seed(4);inds <- sample(rep(1:5,20))
+
+# ---------------------
+#5-fold CV for model 1
+sse.vec.m1 <- rep(NA,5)
+for (grp in 1:5){
+rws.tst <- which(inds==grp,arr.ind=TRUE)
+rws.trn <- which(inds!=grp,arr.ind=TRUE)
+
+expl <- pred.vars[rws.trn,]
+resp <- resp.var[rws.trn]
+mod.out <- lm(resp ~ expl[,1] + expl[,2] + expl[,7] + expl[,8])
+preds <- cbind(rep(1,20),pred.vars[rws.tst,c(1,2,7,8)]) %*% mod.out$coef
+sse.vec.m1[grp] <- sum((resp.var[rws.tst] - preds)^2)
+}
+sum(sse.vec.m1)
+
+# ---------------------
+#5-fold CV for model 2
+sse.vec.m2 <- rep(NA,5)
+for (grp in 1:5){
+rws.tst <- which(inds==grp,arr.ind=TRUE)
+rws.trn <- which(inds!=grp,arr.ind=TRUE)
+
+expl <- pred.vars[rws.trn,]
+resp <- resp.var[rws.trn]
+mod.out <- lm(resp ~ expl[,1] + expl[,2] + expl[,3])
+preds <- cbind(rep(1,20),pred.vars[rws.tst,c(1,2,3)]) %*% mod.out$coef
+sse.vec.m2[grp] <- sum((resp.var[rws.tst] - preds)^2)
+}
+sum(sse.vec.m2)
+
+
+#PRESS statistic for both models
+pr <- resid(m1)/(1 - lm.influence(m1)$hat);sum(pr^2)
+pr <- resid(m2)/(1 - lm.influence(m2)$hat);sum(pr^2)
+
+
+#stepwise method
+library(MASS)
+out <- stepAIC(m1, 
+	scope = list(upper = ~pred.vars[,1] + pred.vars[,2] + pred.vars[,3] + pred.vars[,4] +
+	pred.vars[,5] + pred.vars[,6] + pred.vars[,7] + pred.vars[,8] + pred.vars[,9] + 
+	pred.vars[,10], lower = ~1),
+	direction = "both")
+
+
+
+
+
+#RB analysis
+#use 40 speed as response
+load("C:\\Users\\brookr\\Documents\\MATH8050flashDrive\\RB.RData")
+load("\\\\home.clemson.edu\\brookr\\Downloads\\RB.RData")
+rb <- rb[,-(1:4)]
+round(cor(rb[,c(6,1:5,7:8)]),2)
+pairs(rb[,c(6,1:5,7:8)])
+#vif_func(rb[,-6])
+
+attach(rb)
+library("car")
+#fit full model
+m1 <- lm(FortySpeed ~ Height + Weight + Bench + Vert + BroadJump + ShuttleSpeed + ThreeConeSpeed)
+stndres <- rstandard(m1)
+par(mfrow=c(1,2));plot(m1$fit,stndres,main="Fitted vs Standardized Residuals");abline(0,0);qqPlot(stndres)
+
+#fit a reduced model
+m2 <- lm(FortySpeed ~ Weight + Bench + Vert + BroadJump)
+stndres <- rstandard(m2)
+par(mfrow=c(1,2));plot(m2$fit,stndres,main="Fitted vs Standardized Residuals");abline(0,0);qqPlot(stndres)
+
+#test for reduced model
+anova(m2,m1)
+
+#get R^2 and adjusted R^2
+summary(m1)
+summary(m2)
+
+#get AIC
+extractAIC(m1)
+extractAIC(m2)
+
+extractAIC(m1,k=log(230))
+extractAIC(m2,k=log(230))
+
+#PRESS statistic for both models
+pr <- resid(m1)/(1 - lm.influence(m1)$hat);sum(pr^2)
+pr <- resid(m2)/(1 - lm.influence(m2)$hat);sum(pr^2)
+
+#cross validation
+set.seed(7);inds <- sample(rep(1:5,46))
+
+pred.vars <- rb[,-6]
+resp.var <- rb$FortySpeed
+
+# ---------------------
+#5-fold CV for model 1
+sse.vec.m1 <- rep(NA,5)
+for (grp in 1:5){
+rws.tst <- which(inds==grp,arr.ind=TRUE)
+rws.trn <- which(inds!=grp,arr.ind=TRUE)
+
+expl <- pred.vars[rws.trn,]
+resp <- resp.var[rws.trn]
+mod.out <- lm(resp ~ expl[,1] + expl[,2] + expl[,3] + expl[,4] + expl[,5] + expl[,6] + expl[,7])
+preds <- cbind(rep(1,46),as.matrix(pred.vars)[rws.tst,c(1:7)]) %*% mod.out$coef
+sse.vec.m1[grp] <- sum((resp.var[rws.tst] - preds)^2)
+}
+sum(sse.vec.m1)
+
+# ---------------------
+#5-fold CV for model 2
+sse.vec.m2 <- rep(NA,5)
+for (grp in 1:5){
+rws.tst <- which(inds==grp,arr.ind=TRUE)
+rws.trn <- which(inds!=grp,arr.ind=TRUE)
+
+expl <- pred.vars[rws.trn,]
+resp <- resp.var[rws.trn]
+mod.out <- lm(resp ~ expl[,2] + expl[,3] + expl[,4] + expl[,5])
+preds <- cbind(rep(1,46),as.matrix(pred.vars)[rws.tst,c(2:5)]) %*% mod.out$coef
+sse.vec.m2[grp] <- sum((resp.var[rws.tst] - preds)^2)
+}
+sum(sse.vec.m2)
+
+
+
+#stepwise method
+library(MASS)
+out1 <- stepAIC(m1, 
+	scope = list(upper = ~Height + Weight + Bench + Vert + BroadJump + ShuttleSpeed + ThreeConeSpeed, lower = ~1),
+	direction = "both")
+
+out2 <- stepAIC(m2, 
+	scope = list(upper = ~Height + Weight + Bench + Vert + BroadJump + ShuttleSpeed + ThreeConeSpeed, lower = ~1),
+	direction = "both")
+
+m3 <- lm(FortySpeed ~ 1)
+out3 <- stepAIC(m3, 
+	scope = list(upper = ~Height + Weight + Bench + Vert + BroadJump + ShuttleSpeed + ThreeConeSpeed, lower = ~1),
+	direction = "both")
+
+
+
+influence.measures(out3)
+stndres <- rstandard(out3)
+par(mfrow=c(1,2));plot(out3$fit,stndres,main="Fitted vs Standardized Residuals");abline(0,0);qqPlot(stndres)
+
+Heavy <- ifelse(Weight < 210, 0, 1)
+m4 <- lm(FortySpeed ~ Heavy + Bench + Vert + BroadJump + ThreeConeSpeed)
+summary(m4)
+extractAIC(m4)
+
+detach(rb)
+
+
+
+
+
+
+
+#consider the standardized variables
+rb.stndz <- data.frame(scale(rb,center=TRUE,scale=TRUE))
+
+attach(rb.stndz)
+
+m3.stndz <- lm(FortySpeed ~ Weight + Bench + Vert + BroadJump + ThreeConeSpeed)
+summary(m3.stndz)
+
+detach(rb.stndz)
 
 
 
