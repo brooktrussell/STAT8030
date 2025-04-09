@@ -717,3 +717,55 @@ detach(rb.stndz)
 #data for HW 3
 Soil_pH <- c(3.3,3.4,3.4,3.5,3.6,3.6,3.7,3.7,3.8,3.8,3.9,4.0,4.1,4.2,4.3,4.4,4.5,5.0,5.1,5.2)
 Growth_Ret <- c(17.78,21.59,23.84,15.13,23.45,20.87,17.78,20.09,17.78,12.46,14.95,15.87,17.45,14.35,14.64,17.25,12.57,7.15,7.50,4.34)
+
+
+
+# --------------------
+# ames housing data set
+# --------------------
+#dat <- read.table(file="/media/brookr/Win7/Users/brookr/Desktop/AmesHousingComma.txt",header=TRUE,sep=",")
+#X <- read.table(file="/media/brookr/Win7/Users/brookr/Desktop/AmesHousingComma.txt",header=TRUE,sep=",")
+#X <- read.table(file="D:/AmesHousingComma.txt",header=TRUE,sep=",")
+#X <- read.table("C:/Users/brookr/Documents/MATH8050flashDrive/AmesHousingComma.txt",header=TRUE,sep=",")
+X <- read.table("AmesHousingComma.txt",header=TRUE,sep=",")
+ames.dat <- na.omit(X[,c(82,6,21,56,20,45,51,5)])
+names(ames.dat)
+pairs(ames.dat)
+
+attach(ames.dat)
+hist(Full.Bath)
+
+
+plot(X1st.Flr.SF,SalePrice)
+m1 <- lm(SalePrice ~ X1st.Flr.SF)
+abline(m1)
+
+plot(X1st.Flr.SF,m1$resid)
+abline(0,0)
+
+numBRs <- ifelse(Full.Bath <= 1,0,1)
+cbind(Full.Bath,numBRs)
+
+m2 <- lm(SalePrice ~ X1st.Flr.SF + numBRs)
+m4 <- lm(SalePrice ~ X1st.Flr.SF + factor(Full.Bath))
+m5 <- lm(SalePrice ~ X1st.Flr.SF + Full.Bath)
+plot(X1st.Flr.SF,SalePrice,type="n")
+points(X1st.Flr.SF[numBRs==0],SalePrice[numBRs==0],col="red")
+points(X1st.Flr.SF[numBRs==1],SalePrice[numBRs==1],col="blue")
+abline(m2$coef[1],m2$coef[2],col="red")
+abline(m2$coef[1] + m2$coef[3],m2$coef[2],col="blue")
+
+m3 <- lm(SalePrice ~ X1st.Flr.SF + numBRs + X1st.Flr.SF:numBRs)
+m3 <- lm(SalePrice ~ X1st.Flr.SF*numBRs)
+plot(X1st.Flr.SF,SalePrice,type="n")
+points(X1st.Flr.SF[numBRs==0],SalePrice[numBRs==0],col="red")
+points(X1st.Flr.SF[numBRs==1],SalePrice[numBRs==1],col="blue")
+abline(m3$coef[1],m3$coef[2],col="red",lty=2)
+abline(m3$coef[1] + m3$coef[3],m3$coef[2] + m3$coef[4],col="blue",lty=2)
+
+anova(m1,m3)
+
+detach(ames.dat)
+
+detach(ames.dat)
+
