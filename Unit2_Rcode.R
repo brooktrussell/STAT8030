@@ -769,3 +769,55 @@ detach(ames.dat)
 
 detach(ames.dat)
 
+
+
+# penalized regression
+library(glmnet)
+library(mvtnorm)
+
+sig.mat <- diag(rep(1,12))
+sig.mat[1,2]<-sig.mat[2,1]<-.8
+sig.mat[7,8]<-sig.mat[8,7]<-.85
+sig.mat[7,9]<-sig.mat[9,7]<-.75
+sig.mat[8,9]<-sig.mat[9,8]<-.9
+
+set.seed(6);x.vars <- rmvnorm(150,mean=rep(0,12),sigma=sig.mat)
+
+#first model
+#true beta vector
+beta.vec <- c(1.5,.3,-.5,.1,.1,-.15,0,.2,0,.1,0,0,0)
+set.seed(11);y <- cbind(rep(1,150),x.vars) %*% beta.vec + rnorm(150,0,.15)
+
+cv.out <- cv.glmnet(x.vars,c(y),gamma=1,alpha=0)
+plot(cv.out)
+print(cv.out)
+cbind(coef(cv.out,c(cv.out$lambda.min,cv.out$lambda.1se)),beta.vec)
+
+
+cv.out <- cv.glmnet(x.vars,c(y),gamma=1,alpha=1)
+plot(cv.out)
+print(cv.out)
+cbind(coef(cv.out,c(cv.out$lambda.min,cv.out$lambda.1se)),beta.vec)
+
+
+cv.out <- cv.glmnet(x.vars,c(y),gamma=1,alpha=.5)
+plot(cv.out)
+print(cv.out)
+cbind(coef(cv.out,c(cv.out$lambda.min,cv.out$lambda.1se)),beta.vec)
+
+
+cv.out <- cv.glmnet(x.vars,c(y),gamma=1,alpha=0)
+cv.out <- cv.glmnet(x.vars,c(y),gamma=1,alpha=1,
+   penalty.factor= abs(1/c(matrix(coef(cv.out,c(cv.out$lambda.min))))[-1]))
+plot(cv.out)
+print(cv.out)
+cbind(coef(cv.out,c(cv.out$lambda.min,cv.out$lambda.1se)),beta.vec)
+
+
+
+lm.out <- lm(c(y) ~ x.vars)
+cbind(lm.out$coefficients,beta.vec)
+
+# alpha = 1 ===> LASSO
+# alpha = 0 ===> Ridge
+
