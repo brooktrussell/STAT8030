@@ -821,3 +821,36 @@ cbind(lm.out$coefficients,beta.vec)
 # alpha = 1 ===> LASSO
 # alpha = 0 ===> Ridge
 
+
+set.seed(1);x <- round(rnorm(10,5,3),2)
+
+sd(x)/mean(x)
+
+
+B <- 10000
+out_vec <- rep(NA,B)
+
+set.seed(2)
+for (b in 1:B){
+ resample <- sample(x,rep=TRUE)
+ out_vec[b] <- sd(resample)/mean(resample)
+} 
+sd(out_vec)
+
+#95% CI based on percentile method
+quantile(out_vec,c(.025,.975))
+hist(out_vec)
+abline(v=quantile(out_vec,c(.025,.975)),col="red",lty=2)
+
+#95% CI based on residual method
+e_vec <- out_vec - sd(x)/mean(x)
+quantile(e_vec,c(.025,.975))
+sd(x)/mean(x) - quantile(e_vec,c(.975))
+sd(x)/mean(x) - quantile(e_vec,c(.025))
+
+library(boot)
+
+set.seed(2)
+boot_out <- boot(x,function(dat,inds){boot_dat<-dat[inds];sd(boot_dat)/mean(boot_dat)},R=10000)
+boot.ci(boot_out,type=c("perc", "bca"))
+
