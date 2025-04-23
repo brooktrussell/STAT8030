@@ -854,3 +854,19 @@ set.seed(2)
 boot_out <- boot(x,function(dat,inds){boot_dat<-dat[inds];sd(boot_dat)/mean(boot_dat)},R=10000)
 boot.ci(boot_out,type=c("perc", "bca"))
 
+data(faithful)
+attach(faithful)
+plot(waiting,eruptions)
+m_slr <- lm(eruptions ~ waiting)
+m_slr$coef[2]/m_slr$coef[1]
+e_vec <- m_slr$resid
+x_vals <- waiting
+yhat_vals <- m_slr$fitted
+
+B <- 10000
+out_vec <- rep(NA,B)
+for (b in 1:B){
+  new_y_vec <- yhat_vals + sample(e_vec,rep=TRUE)
+  m_new <- lm(new_y_vec ~ x_vals)
+  out_vec[b] <- m_new$coef[2]/m_new$coef[1]
+}
